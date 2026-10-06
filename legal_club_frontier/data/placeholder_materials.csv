@@ -1,0 +1,2 @@
+material_id,display_name,density_g_cm3,min_wall_thickness_mm,source_note,is_placeholder_data
+placeholder_alloy,Placeholder Alloy,4.5,0.6,"PLACEHOLDER - NOT REAL DATA, FOR WIRING AND TESTING ONLY",TRUE

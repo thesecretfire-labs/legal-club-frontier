@@ -1,0 +1,2 @@
+material_id,material_cost_usd_per_g,machining_cost_usd_per_cc_removed,fixed_assembly_cost_usd,source_note,is_placeholder_data
+placeholder_alloy,0.05,0.5,10.0,"PLACEHOLDER - NOT REAL DATA, FOR WIRING AND TESTING ONLY",TRUE

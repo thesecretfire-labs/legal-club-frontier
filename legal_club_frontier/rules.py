@@ -58,21 +58,52 @@ def rules_fingerprint():
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
-def legality(design, *, allow_tolerance=False):
+def _effective_bound(l, allow_tolerance, shop_tolerances):
+    """The bound `legality`/`legality_margins` actually judges against, after the rules' own tolerance
+    (only on `allow_tolerance=True`) and a shop's machining tolerance (always, if named) are applied.
+
+    For a 'max' field: bound = l.value + (l.tolerance if allow_tolerance else 0) - shop_tolerances.get(l.name, 0).
+    For a 'min' field: bound = l.value + shop_tolerances.get(l.name, 0).
+    """
+    shop = shop_tolerances.get(l.name, 0.0) if shop_tolerances else 0.0
+    if l.kind == "max":
+        return l.value + (l.tolerance if allow_tolerance else 0.0) - shop
+    return l.value + shop
+
+
+def legality(design, *, allow_tolerance=False, shop_tolerances=None):
     """Return (legal, reasons). `design` is a dict of the fields named in LIMITS plus face_to_back_in.
 
     `allow_tolerance=False` judges against the bare limit, the conservative reading a designer should use;
     `allow_tolerance=True` adds the rules' stated manufacturing tolerance, the reading a conformance test
     would apply to a finished club. Both are reported in the run record so nobody has to guess which was used.
+
+    `shop_tolerances`: dict[field_name -> tolerance in the field's native unit], default {} (no tightening).
+    A shop's own machining tolerance tightens the bound a design must clear before it reaches the shop floor:
+    for a 'max' field, effective bound = l.value + (l.tolerance if allow_tolerance else 0) - shop_tolerances.get(l.name, 0);
+    for a 'min' field, effective bound = l.value + shop_tolerances.get(l.name, 0).
     """
     reasons = []
     for l in LIMITS:
         v = design[l.name.replace("_min", "")] if l.name.endswith("_min") else design[l.name]
-        bound = l.value + (l.tolerance if (allow_tolerance and l.kind == "max") else 0.0)
+        bound = _effective_bound(l, allow_tolerance, shop_tolerances)
         if l.kind == "max" and v > bound:
             reasons.append(f"{l.name} = {v:g} {l.unit} exceeds {bound:g} ({l.rule})")
-        if l.kind == "min" and v < l.value:
-            reasons.append(f"{l.name} = {v:g} {l.unit} is below {l.value:g} ({l.rule})")
+        if l.kind == "min" and v < bound:
+            reasons.append(f"{l.name} = {v:g} {l.unit} is below {bound:g} ({l.rule})")
     if design["face_to_back_in"] > design["heel_to_toe_in"]:
         reasons.append(f"face_to_back_in = {design['face_to_back_in']:g} exceeds heel_to_toe_in = {design['heel_to_toe_in']:g} ({FACE_TO_BACK_RULE})")
     return (not reasons), reasons
+
+
+def legality_margins(design, *, allow_tolerance=False, shop_tolerances=None):
+    """Per ruled field, (effective_bound - value) for max fields, (value - effective_bound) for min fields.
+
+    Negative means illegal on that field; this is the number the owner calls the legality margin.
+    """
+    margins = {}
+    for l in LIMITS:
+        v = design[l.name.replace("_min", "")] if l.name.endswith("_min") else design[l.name]
+        bound = _effective_bound(l, allow_tolerance, shop_tolerances)
+        margins[l.name] = (bound - v) if l.kind == "max" else (v - bound)
+    return margins
