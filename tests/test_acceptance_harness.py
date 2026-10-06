@@ -34,7 +34,7 @@ from legal_club_frontier import model, outlets, rules, search  # noqa: E402
 LEGAL_REFERENCE = {
     "loft_deg": 10.5, "shaft_length_in": 45.5, "head_volume_cc": 455.0, "head_mass_g": 200.0,
     "moment_of_inertia_gcm2": 5600.0, "characteristic_time_us": 235.0, "heel_to_toe_in": 4.9,
-    "face_to_back_in": 4.6, "sole_to_crown_in": 2.6, "groove_width_in": 0.030, "groove_depth_in": 0.018,
+    "face_to_back_in": 4.6, "sole_to_crown_in": 2.6, "groove_width_in": 0.030, "groove_depth_in": 0.018, "groove_separation_in": 0.100,
 }
 
 # the negative controls: each differs from the legal reference in exactly one ruled field

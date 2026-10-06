@@ -38,8 +38,10 @@ BOUNDS = {
     "sole_to_crown_in":       (2.2, 3.1),
     "groove_width_in":        (0.020, 0.045),
     "groove_depth_in":        (0.010, 0.026),
+    "groove_separation_in":   (0.060, 0.140),
 }
 FIELDS = tuple(BOUNDS)
+MAX_POOL = 1200   # the most designs the O(n^2) frontier sort is asked to hold at once; see run()
 
 
 def sample_box(rng, n):
@@ -114,6 +116,11 @@ def run(seed=0, n_samples=4000, refine_rounds=3, refine_per_point=20, allow_tole
     rejected_as_infeasible = len(legal_rows) - len(feasible_rows)
 
     pool = np.array(feasible_rows) if feasible_rows else np.empty((0, len(FIELDS)))
+    # The non-dominated sort is O(n^2). A loose rule table (or a mutant that approves everything) would let the
+    # pool grow to every sample; cap it, deterministically from the same seed, and record that the cap bit.
+    pool_capped = len(pool) > MAX_POOL
+    if pool_capped:
+        pool = pool[rng.choice(len(pool), MAX_POOL, replace=False)]
     sign = np.array([1.0 if OBJECTIVE_DIRECTIONS[o] == "max" else -1.0 for o in OBJECTIVES])
 
     def _evaluate(r):
@@ -138,6 +145,9 @@ def run(seed=0, n_samples=4000, refine_rounds=3, refine_per_point=20, allow_tole
                 if _legal(cd) and _feasible(cd):
                     children.append(c)
         pool = np.vstack([front, np.array(children)]) if children else front
+        if len(pool) > MAX_POOL:
+            pool_capped = True
+            pool = np.vstack([front, pool[len(front):][rng.choice(len(pool) - len(front), MAX_POOL - len(front), replace=False)]]) if len(front) < MAX_POOL else front[:MAX_POOL]
 
     if len(pool) == 0:
         frontier = []
@@ -160,5 +170,5 @@ def run(seed=0, n_samples=4000, refine_rounds=3, refine_per_point=20, allow_tole
         "allow_tolerance": allow_tolerance, "loft_deg": loft_deg, "swing_speed_ref_mps": swing_speed_ref_mps,
         "frontier_size": len(frontier), "frontier": frontier,
         "outlets": meta_by_outlet, "placeholder_outlets": placeholder_outlet_names,
-        "shop_tolerances": shop_tolerances,
+        "shop_tolerances": shop_tolerances, "pool_capped_at": MAX_POOL if pool_capped else None,
     }

@@ -47,11 +47,14 @@ The limits the search enforces, as transcribed from the USGA / R&A Equipment Rul
 | `characteristic_time_us` | 239 | microsecond, maximum (+18 tolerance) | Part 2, Rule 4c (Spring Effect) |
 | `groove_width_in` | 0.035 | inch, maximum | Part 2, Rule 5c (Grooves) |
 | `groove_depth_in` | 0.02 | inch, maximum | Part 2, Rule 5c (Grooves) |
+| `groove_separation_in_min` | 0.075 | inch, minimum | Part 2, Rule 5c (Grooves) |
 <!-- rules-table-end -->
 
-Plus one relation between two fields: the face-to-back distance may not exceed the heel-to-toe distance (Part 2, Rule 4b(i)).
+Plus two relations between fields: the face-to-back distance may not exceed the heel-to-toe distance (Part 2, Rule 4b(i)), and the distance between adjacent grooves may not be less than three times the groove width (Part 2, Rule 5c).
 
-These numbers were transcribed by a person on the date in `rules.verify_date`, not pulled from an API. Equipment rules change. If one no longer matches the current text, the fix is one line in `rules.py`, and the README test will tell you which quotation to update.
+One optional rule is a note, not a limit: Model Local Rule G-10 (2022) lets a committee cap overall length at 46 inches for its competition. The base 48-inch rule stands; a designer aiming at elite competition should bound the shaft search at 46.
+
+**Which rulebook, and from where.** The USGA / R&A Equipment Rules, Part 2 (Clubs), using the 2019 edition's rule numbering, read from the USGA's own pages (`rules.SOURCES` lists the three URLs: Part 2 Rules 1, 4 and 5). The numbers were transcribed by a person and cross-checked on the date in `rules.verify_date`, not pulled from an API; a later edition (v1.3, December 2024) exists and its section numbering was not re-verified. Equipment rules change, and it does not matter to the shape of this program which edition is loaded: what matters is that the edition is named, the table is fingerprinted into every run record, and the program refuses a design the named rules refuse. If a limit no longer matches the current text, the fix is one line in `rules.py`, and the README test will tell you which quotation to update.
 
 ## What the model is, and is not
 

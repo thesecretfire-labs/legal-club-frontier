@@ -39,11 +39,33 @@ LIMITS = (
     Limit("characteristic_time_us", 239.0, "microsecond", "max", "Part 2, Rule 4c (Spring Effect): characteristic time must not exceed 239 microseconds", tolerance=18.0),
     Limit("groove_width_in", 0.035, "inch", "max", "Part 2, Rule 5c (Grooves): groove width must not exceed 0.035 inch"),
     Limit("groove_depth_in", 0.020, "inch", "max", "Part 2, Rule 5c (Grooves): groove depth must not exceed 0.020 inch"),
+    Limit("groove_separation_in_min", 0.075, "inch", "min", "Part 2, Rule 5c (Grooves): the distance between adjacent grooves must not be less than 0.075 inch"),
 )
 
-# The face-to-back dimension may not exceed the heel-to-toe dimension (Part 2, Rule 4b(i)); it is a relation
-# between two fields, not a single number, so it is checked in code below rather than listed as a Limit.
+# Two rules are relations between fields, not single numbers, so they are checked in code below rather than
+# listed as a Limit: the face-to-back dimension may not exceed heel-to-toe (Rule 4b(i)), and groove separation
+# may not be less than three times groove width (Rule 5c).
 FACE_TO_BACK_RULE = "Part 2, Rule 4b(i) (Dimensions): distance from face to back must not exceed distance from heel to toe"
+GROOVE_SPACING_RULE = "Part 2, Rule 5c (Grooves): the distance between adjacent grooves must not be less than three times the groove width"
+
+# A committee may adopt Model Local Rule G-10 (introduced 2022) capping overall length at 46 inches for its
+# competition. It is optional and does not change Rule 1c's 48-inch limit, so it is a note here, not a Limit;
+# a designer aiming at elite competition should search with shaft_length_in bounded at 46.
+COMPETITION_LENGTH_NOTE = "Model Local Rule G-10 (2022): a committee may limit overall length to 46 inches (0.20 inch tolerance), putters excepted"
+
+# Where the numbers come from, so a run is reproducible against a named text. "Equipment Rules" means the
+# USGA / R&A Rules of Golf Equipment Rules; the rule numbering used throughout is the 2019 edition's, which the
+# USGA publishes at usga.org/equipment-standards/equipment-rules-2019/ (Part 2 pages: rule-1, rule-4, rule-5).
+# The numbers were read from those pages and cross-checked on 2026-10-06 against search-indexed copies of the
+# same pages; the primary pages themselves could not be fetched by machine that day, so this is a human
+# reading of a public text, dated, not an automated feed. A later edition (v1.3, December 2024) exists; its
+# section numbering was not re-verified. If any limit no longer matches the current text, change it here.
+EDITION = "USGA / R&A Equipment Rules, Part 2 (Clubs), 2019 edition numbering"
+SOURCES = (
+    "https://www.usga.org/equipment-standards/equipment-rules-2019/equipment-rules/part-2-rule-1.html",
+    "https://www.usga.org/equipment-standards/equipment-rules-2019/equipment-rules/part-2-rule-4.html",
+    "https://www.usga.org/equipment-standards/equipment-rules-2019/equipment-rules/part-2-rule-5.html",
+)
 
 verify_date = "2026-10-06"   # the day these limits were last read against the published text
 
@@ -54,7 +76,7 @@ def limits_by_name():
 
 def rules_fingerprint():
     """A hash of the whole constraint table, so every run record can say exactly which rules it was judged by."""
-    blob = json.dumps([asdict(l) for l in LIMITS] + [FACE_TO_BACK_RULE, verify_date], sort_keys=True)
+    blob = json.dumps([asdict(l) for l in LIMITS] + [FACE_TO_BACK_RULE, GROOVE_SPACING_RULE, EDITION, *SOURCES, verify_date], sort_keys=True)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
@@ -93,6 +115,8 @@ def legality(design, *, allow_tolerance=False, shop_tolerances=None):
             reasons.append(f"{l.name} = {v:g} {l.unit} is below {bound:g} ({l.rule})")
     if design["face_to_back_in"] > design["heel_to_toe_in"]:
         reasons.append(f"face_to_back_in = {design['face_to_back_in']:g} exceeds heel_to_toe_in = {design['heel_to_toe_in']:g} ({FACE_TO_BACK_RULE})")
+    if design["groove_separation_in"] < 3.0 * design["groove_width_in"]:
+        reasons.append(f"groove_separation_in = {design['groove_separation_in']:g} is less than three times groove_width_in = {design['groove_width_in']:g} ({GROOVE_SPACING_RULE})")
     return (not reasons), reasons
 
 
