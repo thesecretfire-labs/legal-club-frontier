@@ -1,0 +1,1 @@
+"""Legal Club Frontier: constraints and objectives in, a Pareto frontier of rule-legal driver designs out. A small, honest example of inverse design with a cited constraint table, negative controls, and a run record."""
